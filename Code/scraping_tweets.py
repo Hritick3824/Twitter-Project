@@ -1,6 +1,5 @@
 import tweepy
 import csv
-import time
 import pandas as pd
 import config  # Replace with your configuration module containing the Bearer Token
 
@@ -17,8 +16,10 @@ tweet_count = 0
 # Create a CSV file and write headers
 with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
     writer = csv.DictWriter(file, fieldnames=[
-        "tweet_id", "text", "created_at", "author_id", "username", "name", "description",
-        "location", "verified", "followers_count", "following_count", "user_profile_link", "tweet_link",
+        "tweet_id", "text", "created_at", "author_id", "username", "name","account_creation_date", "description",
+        "location", "verified", "followers_count", "following_count", "tweet_count", "media_count",
+        "listed_count", "profile_url", "profile_image_url", "profile_banner_url",
+        "protected_status", "external_link", "tweet_link",
         "media_key", "media_type", "media_url", "alt_text", "original_tweet_text", "tweet_status"
     ])
     writer.writeheader()
@@ -46,7 +47,8 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                 end_time=end_time,
                 max_results=max_results,
                 tweet_fields=["created_at", "text", "referenced_tweets"],
-                user_fields=["username", "location", "verified", "public_metrics", "name", "description"],
+                user_fields=["username", "location", "verified", "public_metrics", "name", "description",
+                             "created_at", "profile_image_url", "protected", "profile_banner_url", "entities"],
                 expansions=["author_id", "attachments.media_keys", "referenced_tweets.id"],
                 media_fields=["media_key", "type", "url", "alt_text"],
                 next_token=next_token
@@ -60,7 +62,6 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
 
                 for tweet in response.data:
                     tweet_count += 1
-                    # print(f"Tweet #{tweet_count}", end='\r')
                     
                     # Get user details
                     user = users.get(tweet.author_id, {})
@@ -71,6 +72,20 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                     verified = user.get("verified", "NA")
                     followers_count = user.get("public_metrics", {}).get("followers_count", "NA")
                     following_count = user.get("public_metrics", {}).get("following_count", "NA")
+                    tweet_count = user.get("public_metrics", {}).get("tweet_count", "NA")
+                    listed_count = user.get("public_metrics", {}).get("listed_count", "NA")
+                    media_count = user.get("public_metrics", {}).get("media_count", "NA")
+                    profile_url = f"https://twitter.com/{username}" if username != "NA" else "NA"
+                    profile_image_url = user.get("profile_image_url", "NA")
+                    profile_banner_url = user.get("profile_banner_url", "NA")
+                    protected_status = user.get("protected", "NA")
+                    account_creation_date = user.get("created_at", "NA")
+
+                    external_link = "NA"
+                    if user.get("entities") and "url" in user["entities"]:
+                        urls = user["entities"]["url"].get("urls", [])
+                        if urls and "expanded_url" in urls[0]:
+                            external_link = urls[0]["expanded_url"]
 
                     # Determine the tweet status and initialize original tweet text
                     original_tweet_text = "NA"
@@ -99,20 +114,28 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                                 alt_text = media.alt_text or "NA"
 
                     writer.writerow({
-                        "tweet_id": tweet.id,
+                        "tweet_id": str(tweet.id),
                         "text": tweet.text,
                         "original_tweet_text": original_tweet_text,
                         "tweet_status": tweet_status,
                         "created_at": tweet.created_at,
-                        "author_id": tweet.author_id,
+                        "author_id": str(tweet.author_id),
                         "username": username,
                         "name": name,
+                        "account_creation_date": account_creation_date,
                         "description": description,
                         "location": location,
                         "verified": verified,
                         "followers_count": followers_count,
                         "following_count": following_count,
-                        "user_profile_link": f"https://twitter.com/{username}" if username != "NA" else "NA",
+                        "tweet_count": tweet_count,
+                        "media_count": media_count,
+                        "listed_count": listed_count,
+                        "profile_url": profile_url,
+                        "profile_image_url": profile_image_url,
+                        "profile_banner_url": profile_banner_url,
+                        "protected_status": protected_status,
+                        "external_link": external_link,
                         "tweet_link": f"https://twitter.com/i/web/status/{tweet.id}",
                         "media_key": media_key,
                         "media_type": media_type,
@@ -120,7 +143,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                         "alt_text": alt_text,
                     })
                     print(f"Tweet:{tweet_count}, Date:{tweet.created_at}")
-                    
+
                 next_token = response.meta.get("next_token")
                 if not next_token:
                     print(f"All tweets fetched. Total tweets retrieved: {tweet_count}")
@@ -164,11 +187,10 @@ for column in string_columns:
 # --- Replace Retweets with Original Tweets ---
 # Replace text column with original tweet text where available
 data['text'] = data['original_tweet_text'].combine_first(data['text'])
-# data['tweet_id'] = data["tweet_id"].astype(str)
-# data["author_id"]  = data["author_id"].astype(str)
-# Save the updated data
+data['tweet_id'] = data["tweet_id"].astype(str)
+data["author_id"]  = data["author_id"].astype(str)
+# Save the cleaned and updated data
 updated_file_path = r"Output_Scraped_data\English_tweets\tweets_data_English_tweets_4-5.csv"
-# data.to_csv(updated_file_path, index=False, encoding='utf-8-sig')
 data.to_csv(updated_file_path, index=False, encoding="utf-8-sig")
 print(f"Updated file saved to: {updated_file_path}")
 

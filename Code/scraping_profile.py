@@ -3,17 +3,18 @@ import pandas as pd
 from tqdm import tqdm
 import time
 import config
+from datetime import datetime
 
 # Initialize the Tweepy Client
 client = tweepy.Client(bearer_token=config.Bearer_token)
 
 # Load the Excel file containing usernames
-input_file_path = r'Input_data_for_scraping_userprofiles\German_Users_Final.xlsx'
+input_file_path = r'Input_data_for_scraping_userprofiles\English_Users.xlsx'
 twitter_handles_df = pd.read_excel(input_file_path)
 
 # Clean the usernames: Remove leading/trailing whitespaces and drop blanks
-twitter_handles_df['SenderScreenName'] = twitter_handles_df['SenderScreenName'].str.strip()
-twitter_handles_df = twitter_handles_df[twitter_handles_df['SenderScreenName'].notna()]
+twitter_handles_df['username'] = twitter_handles_df['username'].str.strip()
+twitter_handles_df = twitter_handles_df[twitter_handles_df['username'].notna()]
 
 # Prepare a list to store scraped data
 scraped_data = []
@@ -28,7 +29,7 @@ def check_rate_limit(response):
     return remaining, reset_time
 
 # Use tqdm for a progress bar
-for username in tqdm(twitter_handles_df['SenderScreenName'], desc="Scraping Twitter Data"):
+for username in tqdm(twitter_handles_df['username'], desc="Scraping Twitter Data"):
     username = username.strip()  # Ensure no leading or trailing spaces
     while True:
         try:
@@ -57,6 +58,7 @@ for username in tqdm(twitter_handles_df['SenderScreenName'], desc="Scraping Twit
                     'Followers Count': 'Not Found',
                     'Following Count': 'Not Found',
                     'Tweet Count': 'Not Found',
+                    'Media Count': 'Not Found',
                     'Listed Count': 'Not Found',
                     'Account Creation Date': 'Not Found',
                     'Verified Status': 'Not Found',
@@ -78,6 +80,7 @@ for username in tqdm(twitter_handles_df['SenderScreenName'], desc="Scraping Twit
             profile_image_url = user.data.profile_image_url if hasattr(user.data, 'profile_image_url') else 'N/A'
             profile_banner_url = user.data.profile_banner_url if hasattr(user.data, 'profile_banner_url') else 'N/A'
             listed_count = user.data.public_metrics.get('listed_count', 'N/A')
+            media_count = user.data.public_metrics.get('media_count', 'N/A')  # Add this line to retrieve media count
             protected_status = user.data.protected
 
             scraped_data.append({
@@ -93,6 +96,7 @@ for username in tqdm(twitter_handles_df['SenderScreenName'], desc="Scraping Twit
                 'Followers Count': user.data.public_metrics['followers_count'],
                 'Following Count': user.data.public_metrics['following_count'],
                 'Tweet Count': user.data.public_metrics['tweet_count'],
+                'Media Count': media_count,  # Include the media count in the output
                 'Listed Count': listed_count,
                 'Account Creation Date': user.data.created_at,
                 'Verified Status': user.data.verified,
@@ -128,6 +132,7 @@ for username in tqdm(twitter_handles_df['SenderScreenName'], desc="Scraping Twit
                 'Followers Count': 'Error',
                 'Following Count': 'Error',
                 'Tweet Count': 'Error',
+                'Media Count': 'Error',  # Add media count to error case
                 'Listed Count': 'Error',
                 'Account Creation Date': 'Error',
                 'Verified Status': 'Error',
@@ -137,7 +142,8 @@ for username in tqdm(twitter_handles_df['SenderScreenName'], desc="Scraping Twit
 
 # Convert the list of scraped data to a DataFrame
 scraped_data_df = pd.DataFrame(scraped_data)
-
+scraped_data_df['Account Creation Date'] = pd.to_datetime(scraped_data_df['Account Creation Date'], errors='coerce')
+scraped_data_df['Account Creation Date'] = scraped_data_df['Account Creation Date'].dt.strftime('%a %b %d %H:%M:%S %z %Y')
 # Save the DataFrame to a final CSV file
 output_file_path = 'Partial_Scraped_data\Twitter_Scraped_Data_userprofiles.csv'
 scraped_data_df.to_csv(output_file_path, index=False, encoding='utf-8-sig')
@@ -163,7 +169,7 @@ for column in string_columns:
 
 data_cleaned["User ID"] = data_cleaned['User ID'].astype(str)
 # Save the cleaned data
-cleaned_file_path = "Output_Scraped_data\Cleaned_Twitter_Scraped_Data_Profiles_Final.xlsx"
+cleaned_file_path = "Output_Scraped_data\Cleaned_Twitter_Scraped_Data_Profiles_English_0.xlsx"
 data_cleaned.to_excel(cleaned_file_path, index=False)
 
 print(f"Final scraped data has been cleaned and saved locally to {cleaned_file_path}")
