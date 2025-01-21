@@ -75,7 +75,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                     tweet_count = user.get("public_metrics", {}).get("tweet_count", "NA")
                     listed_count = user.get("public_metrics", {}).get("listed_count", "NA")
                     media_count = user.get("public_metrics", {}).get("media_count", "NA")
-                    profile_url = f"https://twitter.com/{username}" if username != "NA" else "NA"
+                    # profile_url = f"https://twitter.com/{username}" if username != "NA" else "NA"
                     profile_image_url = user.get("profile_image_url", "NA")
                     profile_banner_url = user.get("profile_banner_url", "NA")
                     protected_status = user.get("protected", "NA")
@@ -131,7 +131,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                         "tweet_count": tweet_count,
                         "media_count": media_count,
                         "listed_count": listed_count,
-                        "profile_url": profile_url,
+                        "profile_url": f"https://x.com/i/user/{tweet.author_id}",
                         "profile_image_url": profile_image_url,
                         "profile_banner_url": profile_banner_url,
                         "protected_status": protected_status,
