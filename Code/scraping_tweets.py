@@ -8,7 +8,7 @@ import config  # Replace with your configuration module containing the Bearer To
 client = tweepy.Client(bearer_token=config.Bearer_token)
 
 # File to save raw data
-raw_output_file = "tweets_data_English_tweets_4-5.csv"
+raw_output_file = "MS_Drug_tweets.csv"
 
 # Initialize tweet counter
 tweet_count = 0
@@ -17,7 +17,7 @@ tweet_count = 0
 with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
     writer = csv.DictWriter(file, fieldnames=[
         "tweet_id", "text", "created_at", "author_id", "username", "name","account_creation_date", "description",
-        "location", "verified", "followers_count", "following_count", "tweet_count", "media_count",
+        "location", "verified", "followers_count", "following_count", "tweets_count", "media_count",
         "listed_count", "profile_url", "profile_image_url", "profile_banner_url",
         "protected_status", "external_link", "tweet_link",
         "media_key", "media_type", "media_url", "alt_text", "original_tweet_text", "tweet_status"
@@ -26,15 +26,16 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
 
     # Define the search query and parameters
     # Full English query
-    query = '(Glaucoma OR Wet Macular Degeneration OR Dry Macular Degeneration OR Macula OR Ophtha OR Corneal Dystrophy OR Diabetic Retinopathy OR Diabetic Macular Edema OR Vabysmo OR Eylea OR Lucentis OR Ranibizumab OR Aflibercept OR Faricimab OR Pegcetacoplan OR Syfovre OR Ophthalmology OR Vascular endothelial growth factor OR Neovascular Age-Related Macular Degeneration) lang:en'
+    query = '("Americas Committee for the Treatment and Research" OR "ACTRIMS 2024" OR "CMSC" OR "Consortium of Multiple Sclerosis Centers" OR "American academy of neurology") lang:en -is:retweet'
+
 
     # English query
     # query = '(Glaucoma OR Wet Macular Degeneration OR Dry Macular Degeneration OR Macula lutea OR Ophtha OR Corneal Dystrophy OR Diabetic Retinopathy OR Diabetic Macular Edema OR Vabysmo OR Eylea OR Lucentis OR Ranibizumab OR Aflibercept OR Faricimab OR Pegcetacoplan OR Syfovre OR Ophthalmology OR Vascular endothelial growth factor) place_country:JA'
    
     # Translated query
     # query = '(緑内障 OR 湿性加齢黄斑変性症 OR 乾性加齢黄斑変性症 OR 黄斑  OR 角膜ジストロフィー OR 糖尿病網膜症 OR 糖尿病黄斑浮腫 OR Vabysmo OR Eylea OR Lucentis OR Ranibizumab OR Aflibercept OR Faricimab OR Pegcetacoplan OR Syfovre OR 眼科学 OR 血管内皮増殖因子) lang:ja'
-    start_time = "2024-02-01T00:00:00Z"
-    end_time = "2024-05-30T19:36:59Z"
+    start_time = "2024-01-01T00:00:00Z"
+    end_time = "2025-01-23T23:59:59Z"
     max_results = 100
     next_token = None
 
@@ -72,7 +73,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                     verified = user.get("verified", "NA")
                     followers_count = user.get("public_metrics", {}).get("followers_count", "NA")
                     following_count = user.get("public_metrics", {}).get("following_count", "NA")
-                    tweet_count = user.get("public_metrics", {}).get("tweet_count", "NA")
+                    tweets_count = user.get("public_metrics", {}).get("tweet_count", "NA")
                     listed_count = user.get("public_metrics", {}).get("listed_count", "NA")
                     media_count = user.get("public_metrics", {}).get("media_count", "NA")
                     # profile_url = f"https://twitter.com/{username}" if username != "NA" else "NA"
@@ -128,7 +129,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                         "verified": verified,
                         "followers_count": followers_count,
                         "following_count": following_count,
-                        "tweet_count": tweet_count,
+                        "tweets_count": tweets_count,
                         "media_count": media_count,
                         "listed_count": listed_count,
                         "profile_url": f"https://x.com/i/user/{tweet.author_id}",
@@ -156,6 +157,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
             print("Rate limit reached. Pausing for 15 minutes...")
             print(f"All tweets fetched. Total tweets retrieved: {tweet_count}")
             # time.sleep(15 * 60)
+
 
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -190,7 +192,7 @@ data['text'] = data['original_tweet_text'].combine_first(data['text'])
 data['tweet_id'] = data["tweet_id"].astype(str)
 data["author_id"]  = data["author_id"].astype(str)
 # Save the cleaned and updated data
-updated_file_path = r"Output_Scraped_data\English_tweets\tweets_data_English_tweets_4-5.csv"
+updated_file_path = r"D:\Roche\Multiple Sclerosis Market Research\Twitter-Project\Output_Scraped_data\MS_society_Congress_test.csv"
 data.to_csv(updated_file_path, index=False, encoding="utf-8-sig")
 print(f"Updated file saved to: {updated_file_path}")
 
