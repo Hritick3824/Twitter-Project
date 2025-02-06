@@ -7,11 +7,26 @@ import config  # Replace with your configuration module containing the Bearer To
 # Initialize Tweepy client
 client = tweepy.Client(bearer_token=config.Bearer_token)
 
-# File to save raw data
-raw_output_file = r"Partial_Scraped_data\MS_Drug_tweets.csv"
+# Input file containing Tweet IDs in the 'Permalink' column
+input_file = "test.xlsx"  # Ensure this file contains a column named 'Permalink'
 
-# Initialize tweet counter
-tweet_count = 0
+# Output file to save tweet details
+raw_output_file = "MS_Drug_tweets_updated_1.csv"
+
+data = pd.read_excel(input_file)
+
+def extract_tweet_id(permalink):
+    try:
+        return permalink.split("status/")[-1]  # Extract tweet ID from URL
+    except:
+        return None
+
+# Extract Tweet IDs from the 'Permalink' column
+
+# data['tweet_id'] = data['Permalink'].apply(extract_tweet_id)
+# tweet_ids = data['tweet_id'].dropna().astype(str).tolist()
+
+tweet_ids = data['tweet_id'].dropna().astype(str).tolist()
 
 # Create a CSV file and write headers
 with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
@@ -24,42 +39,28 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
     ])
     writer.writeheader()
 
-    # Define the search query and parameters
+    tweet_count = 0
 
-    # query = '("Americas Committee for the Treatment and Research" OR "ACTRIMS 2024" OR "CMSC" OR "Consortium of Multiple Sclerosis Centers" OR "American academy of neurology") lang:en -is:retweet'
-    query = '''(IBD OR Crohns OR Colitis OR "Crohns" OR "Crohn's" OR "Ulcerative Colitis") (Skyrizi OR Stelara OR risankizumab OR ustekinumab) -is:retweet profile_country:US'''
-    
-    start_time = "2024-01-01T00:00:00Z"
-    end_time = "2025-02-05T23:59:59Z"
-    max_results = 100
-    next_token = None
-
-    while True:
+    for i in range(0, len(tweet_ids), 100):  # Twitter API allows max 100 IDs per request
+        batch_ids = tweet_ids[i:i+100]
         try:
-            # Fetch tweets with pagination
-            response = client.search_all_tweets(
-                query=query,
-                start_time=start_time,
-                end_time=end_time,
-                max_results=max_results,
+            # Fetch tweets
+            response = client.get_tweets(
+                ids=batch_ids,
                 tweet_fields=["created_at", "text", "referenced_tweets"],
                 user_fields=["username", "location", "verified", "public_metrics", "name", "description",
                              "created_at", "profile_image_url", "protected", "profile_banner_url", "entities"],
                 expansions=["author_id", "attachments.media_keys", "referenced_tweets.id"],
-                media_fields=["media_key", "type", "url", "alt_text"],
-                next_token=next_token
+                media_fields=["media_key", "type", "url", "alt_text"]
             )
 
             if response.data:
-                # Map users and media
                 users = {user["id"]: user for user in response.includes.get("users", [])}
                 referenced_tweets = {tweet.id: tweet.text for tweet in response.includes.get("tweets", [])}
                 media_map = {media.media_key: media for media in response.includes.get("media", [])}
 
                 for tweet in response.data:
                     tweet_count += 1
-                    
-                    # Get user details
                     user = users.get(tweet.author_id, {})
                     username = user.get("username", "NA")
                     name = user.get("name", "NA")
@@ -81,7 +82,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                         urls = user["entities"]["url"].get("urls", [])
                         if urls and "expanded_url" in urls[0]:
                             external_link = urls[0]["expanded_url"]
-                        
+
                     original_tweet_text = "NA"
                     original_tweet_id = "NA"
                     tweet_status = "Original"
@@ -116,9 +117,6 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                     if tweet_status == "Reply Tweet" and str(tweet.author_id) == str(original_tweet_author):
                         tweet_status = "Threaded Tweet"
 
-
-                        
-                    # Get media details
                     media_key = "NA"
                     media_type = "NA"
                     media_url = "NA"
@@ -164,57 +162,11 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                     })
                     print(f"Tweet:{tweet_count}, Date:{tweet.created_at}")
 
-                next_token = response.meta.get("next_token")
-                if not next_token:
-                    print(f"All tweets fetched. Total tweets retrieved: {tweet_count}")
-                    break
-            else:
-                print(f"No tweets found. Total tweets retrieved: {tweet_count}")
-                break
-
         except tweepy.TooManyRequests:
             print("Rate limit reached. Pausing for 15 minutes...")
-            print(f"All tweets fetched. Total tweets retrieved: {tweet_count}")
             # time.sleep(15 * 60)
-
-
         except Exception as e:
             print(f"An error occurred: {e}")
             break
 
 print(f"Done! Total tweets saved: {tweet_count}")
-
-# --- Data Cleaning ---
-# Load the raw data
-data = pd.read_csv(raw_output_file)
-
-# Function to clean string columns
-def clean_text(text):
-    if pd.isna(text):
-        return text
-    elif isinstance(text, str):
-        return ' '.join(text.strip().split())
-    else:
-        return text
-
-string_columns = data.select_dtypes(include=['object']).columns
-for column in string_columns:
-    data[column] = data[column].apply(clean_text)
-
-# Save the cleaned data
-# cleaned_file_path = "Cleaned_tweets_data_Germany_All.csv"
-# data.to_csv(cleaned_file_path, index=False, encoding='utf-8-sig')
-
-# --- Replace Retweets with Original Tweets ---
-
-# Replace text column with original tweet text where available
-
-# data['text'] = data['original_tweet_text'].combine_first(data['text'])
-data['tweet_id'] = data["tweet_id"].astype(str)
-data["author_id"]  = data["author_id"].astype(str)
-
-# Save the cleaned and updated data
-updated_file_path = r"Output_Scraped_data\test.csv"
-data.to_csv(updated_file_path, index=False, encoding="utf-8-sig")
-print(f"Updated file saved to: {updated_file_path}")
-
