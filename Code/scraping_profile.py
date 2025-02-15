@@ -80,7 +80,7 @@ for username in tqdm(twitter_handles_df['username'], desc="Scraping Twitter Data
             profile_image_url = user.data.profile_image_url if hasattr(user.data, 'profile_image_url') else 'N/A'
             profile_banner_url = user.data.profile_banner_url if hasattr(user.data, 'profile_banner_url') else 'N/A'
             listed_count = user.data.public_metrics.get('listed_count', 'N/A')
-            media_count = user.data.public_metrics.get('media_count', 'N/A')  # Add this line to retrieve media count
+            media_count = user.data.public_metrics.get('media_count', 'N/A')  # line to retrieve media count
             protected_status = user.data.protected
 
             scraped_data.append({
