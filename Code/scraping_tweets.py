@@ -161,7 +161,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                         "media_url": media_url,
                         "alt_text": alt_text,
                         "original_tweet_link": f"https://twitter.com/i/web/status/{original_tweet_id}" if original_tweet_id != "NA" else "NA",
-                        "original_tweet_id" : original_tweet_id
+                        "original_tweet_id" : str(original_tweet_id)
                     })
                     print(f"Tweet:{tweet_count}, Date:{tweet.created_at}")
 
