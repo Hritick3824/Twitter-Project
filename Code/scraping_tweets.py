@@ -8,7 +8,7 @@ import config  # Replace with your configuration module containing the Bearer To
 client = tweepy.Client(bearer_token=config.Bearer_token)
 
 # File to save raw data
-raw_output_file = r"Partial_Scraped_data\MS_Drug_tweets.csv"
+raw_output_file = r"Partial_Scraped_data\Raw_tweets.csv"
 
 # Initialize tweet counter
 tweet_count = 0
