@@ -213,7 +213,7 @@ for column in string_columns:
 # data['text'] = data['original_tweet_text'].combine_first(data['text'])
 data['tweet_id'] = data["tweet_id"].astype(str)
 data["author_id"]  = data["author_id"].astype(str)
-
+data['original_tweet_id'] = data["original_tweet_id"].astype(str)
 # Save the cleaned and updated data
 updated_file_path = r"Output_Scraped_data\test.csv"
 data.to_csv(updated_file_path, index=False, encoding="utf-8-sig")
