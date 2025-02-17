@@ -30,7 +30,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
     query = '''(IBD OR Crohns OR Colitis OR "Crohns" OR "Crohn's" OR "Ulcerative Colitis") (Skyrizi OR Stelara OR risankizumab OR ustekinumab) -is:retweet profile_country:US'''
     
     start_time = "2024-01-01T00:00:00Z"
-    end_time = "2024-05-05T23:59:59Z"
+    end_time = "2025-02-05T23:59:59Z"
     max_results = 100
     next_token = None
 
