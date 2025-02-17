@@ -30,7 +30,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
     query = '''(IBD OR Crohns OR Colitis OR "Crohns" OR "Crohn's" OR "Ulcerative Colitis") (Skyrizi OR Stelara OR risankizumab OR ustekinumab) -is:retweet profile_country:US'''
     
     start_time = "2024-01-01T00:00:00Z"
-    end_time = "2025-02-05T23:59:59Z"
+    end_time = "2024-05-05T23:59:59Z"
     max_results = 100
     next_token = None
 
@@ -89,20 +89,20 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                     if tweet.referenced_tweets:
                         for ref in tweet.referenced_tweets:
                             if ref.type == "retweeted":
-                                original_tweet_text = referenced_tweets.get(ref.id, "NA")
+                                original_tweet_text = referenced_tweets.get(ref.id, "Protected or Deleted")
                                 original_tweet_id = str(ref.id)
                                 tweet_status = "Retweet"
                             elif ref.type == "quoted":
-                                original_tweet_text = referenced_tweets.get(ref.id, "NA")
+                                original_tweet_text = referenced_tweets.get(ref.id, "Protected or Deleted")
                                 original_tweet_id = str(ref.id)
                                 tweet_status = "Quoted Tweet"
                             elif ref.type == "replied_to":
-                                original_tweet_text = referenced_tweets.get(ref.id, "NA")
+                                original_tweet_text = referenced_tweets.get(ref.id, "Protected or Deleted")
                                 original_tweet_id = str(ref.id)
                                 tweet_status = "Reply Tweet"
 
                     # Correctly classify Threaded Tweets (Self-Replies)
-                    original_tweet_author = "NA"
+                    original_tweet_author = None
 
                     if tweet.referenced_tweets:
                         for ref in tweet.referenced_tweets:
@@ -113,7 +113,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                                 if referenced_tweet:
                                     original_tweet_author = referenced_tweet.author_id  # Extract correct author_id
 
-                    if tweet_status == "Reply Tweet" and str(tweet.author_id) == str(original_tweet_author):
+                    if tweet_status == "Reply Tweet" and original_tweet_author and str(tweet.author_id) == str(original_tweet_author):
                         tweet_status = "Threaded Tweet"
 
 
@@ -187,7 +187,7 @@ print(f"Done! Total tweets saved: {tweet_count}")
 
 # --- Data Cleaning ---
 # Load the raw data
-data = pd.read_csv(raw_output_file)
+data = pd.read_csv(raw_output_file,dtype={'original_tweet_id': str,'author_id': str,'tweet_id':str})
 
 # Function to clean string columns
 def clean_text(text):
@@ -201,6 +201,7 @@ def clean_text(text):
 string_columns = data.select_dtypes(include=['object']).columns
 for column in string_columns:
     data[column] = data[column].apply(clean_text)
+data['original_tweet_id'] = (data['original_tweet_id'].astype(str).replace("nan", "").replace("NaN", ""))
 
 # Save the cleaned data
 # cleaned_file_path = "Cleaned_tweets_data_Germany_All.csv"
