@@ -35,7 +35,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
         "location", "verified", "followers_count", "following_count", "tweets_count", "media_count",
         "listed_count", "profile_url", "profile_image_url", "profile_banner_url",
         "protected_status", "external_link", "tweet_link",
-        "media_key", "media_type", "media_url", "alt_text", "original_tweet_text", "tweet_status","original_tweet_link"
+        "media_key", "media_type", "media_url", "alt_text","tweet_status", "original_tweet_id","original_tweet_text", "original_tweet_link"
     ])
     writer.writeheader()
 
@@ -90,20 +90,20 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                     if tweet.referenced_tweets:
                         for ref in tweet.referenced_tweets:
                             if ref.type == "retweeted":
-                                original_tweet_text = referenced_tweets.get(ref.id, "NA")
+                                original_tweet_text = referenced_tweets.get(ref.id, "Protected or Deleted")
                                 original_tweet_id = str(ref.id)
                                 tweet_status = "Retweet"
                             elif ref.type == "quoted":
-                                original_tweet_text = referenced_tweets.get(ref.id, "NA")
+                                original_tweet_text = referenced_tweets.get(ref.id, "Protected or Deleted")
                                 original_tweet_id = str(ref.id)
                                 tweet_status = "Quoted Tweet"
                             elif ref.type == "replied_to":
-                                original_tweet_text = referenced_tweets.get(ref.id, "NA")
+                                original_tweet_text = referenced_tweets.get(ref.id, "Protected or Deleted")
                                 original_tweet_id = str(ref.id)
                                 tweet_status = "Reply Tweet"
 
                     # Correctly classify Threaded Tweets (Self-Replies)
-                    original_tweet_author = "NA"
+                    original_tweet_author = None
 
                     if tweet.referenced_tweets:
                         for ref in tweet.referenced_tweets:
@@ -114,7 +114,7 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                                 if referenced_tweet:
                                     original_tweet_author = referenced_tweet.author_id  # Extract correct author_id
 
-                    if tweet_status == "Reply Tweet" and str(tweet.author_id) == str(original_tweet_author):
+                    if tweet_status == "Reply Tweet" and original_tweet_author and str(tweet.author_id) == str(original_tweet_author):
                         tweet_status = "Threaded Tweet"
 
                     media_key = "NA"
@@ -158,7 +158,8 @@ with open(raw_output_file, mode="w", encoding="utf-8-sig", newline="") as file:
                         "media_type": media_type,
                         "media_url": media_url,
                         "alt_text": alt_text,
-                        "original_tweet_link": f"https://twitter.com/i/web/status/{original_tweet_id}" if original_tweet_id != "NA" else "NA"
+                        "original_tweet_link": f"https://twitter.com/i/web/status/{original_tweet_id}" if original_tweet_id != "NA" else "NA",
+                        "original_tweet_id" : str(original_tweet_id)
                     })
                     print(f"Tweet:{tweet_count}, Date:{tweet.created_at}")
 
